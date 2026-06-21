@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Soneca Barber — Simulação do Barbeiro Dorminhoco</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-deep:#0A0F17;
+    --navy:#121B28;
+    --navy-soft:#1B273A;
+    --red:#A6243B;
+    --cream:#F3EAD6;
+    --cream-dim:#E2D7BD;
+    --brass:#C9A227;
+    --leather:#6B3F2A;
+    --ink:#211810;
+    --ok:#4F8A5B;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 20% 0%, rgba(201,162,39,0.06), transparent 45%),
+      radial-gradient(circle at 80% 100%, rgba(166,36,59,0.08), transparent 50%),
+      var(--navy-deep);
+    color:var(--cream);
+    font-family:'Work Sans', sans-serif;
+    min-height:100vh;
+    padding:18px;
+  }
+  .app{
+    max-width:1100px;
+    margin:0 auto;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+
+  /* ---------- SIGNBOARD ---------- */
+  .signboard{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    padding:18px 22px;
+    background:linear-gradient(180deg, var(--navy-soft), var(--navy));
+    border:1px solid rgba(201,162,39,0.25);
+    border-radius:10px;
+    position:relative;
+    overflow:hidden;
+  }
+  .signboard::after{
+    content:"";
+    position:absolute; inset:0;
+    background:repeating-linear-gradient(90deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 3px);
+    pointer-events:none;
+  }
+  .pole-wrap{
+    flex:0 0 auto;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+  }
+  .pole-cap{
+    width:30px; height:9px;
+    background:linear-gradient(180deg,#E7C75B,var(--brass));
+    border-radius:4px;
+    box-shadow:0 1px 2px rgba(0,0,0,0.4);
+  }
+  .pole{
+    width:30px; height:84px;
+    border-radius:14px;
+    background:repeating-linear-gradient(45deg,
+      var(--red) 0 12px,
+      var(--cream) 12px 24px,
+      var(--navy-deep) 24px 36px);
+    background-size:100% 200%;
+    box-shadow:inset 0 0 0 2px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.5);
+    position:relative;
+  }
+  .pole.spinning{ animation:pole-scroll 0.7s linear infinite; }
+  .pole:not(.spinning){ filter:saturate(0.35) brightness(0.62); }
+  @keyframes pole-scroll{
+    from{ background-position:0 0; }
+    to{ background-position:0 36px; }
+  }
+  .zzz{
+    position:absolute;
+    top:-6px; right:-14px;
+    font-family:'Bebas Neue', sans-serif;
+    font-size:13px;
+    color:var(--cream-dim);
+    opacity:0;
+    letter-spacing:1px;
+  }
+  .pole:not(.spinning) + .zzz, .pole-wrap:has(.pole:not(.spinning)) .zzz{ opacity:0.85; animation:float-z 2.4s ease-in-out infinite; }
+  @keyframes float-z{
+    0%{ transform:translateY(4px); opacity:0; }
+    30%{ opacity:0.9; }
+    100%{ transform:translateY(-14px); opacity:0; }
+  }
+  .sign-text h1{
+    font-family:'Bebas Neue', sans-serif;
+    font-size:clamp(28px, 5vw, 40px);
+    letter-spacing:2px;
+    margin:0;
+    color:var(--cream);
+    text-shadow:0 0 18px rgba(201,162,39,0.18);
+  }
+  .sign-text p{
+    margin:4px 0 0;
+    font-size:13px;
+    color:var(--cream-dim);
+    max-width:560px;
+    line-height:1.5;
+  }
+  .sign-status{
+    margin-left:auto;
+    text-align:right;
+    font-family:'Space Mono', monospace;
+    font-size:12px;
+    color:var(--cream-dim);
+    white-space:nowrap;
+  }
+  .sign-status strong{ color:var(--brass); display:block; font-size:13px; }
+
+  /* ---------- CONTROLS ---------- */
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+    padding:12px 14px;
+    background:var(--navy-soft);
+    border:1px solid rgba(255,255,255,0.06);
+    border-radius:10px;
+  }
+  button{
+    font-family:'Work Sans', sans-serif;
+    font-weight:600;
+    font-size:13px;
+    padding:9px 14px;
+    border-radius:7px;
+    border:1px solid rgba(201,162,39,0.4);
+    background:var(--navy);
+    color:var(--cream);
+    cursor:pointer;
+    transition:background 0.15s ease, transform 0.1s ease;
+  }
+  button:hover:not(:disabled){ background:#23314A; }
+  button:active:not(:disabled){ transform:scale(0.97); }
+  button:disabled{ opacity:0.35; cursor:not-allowed; }
+  button.primary{ background:var(--red); border-color:var(--red); }
+  button.primary:hover:not(:disabled){ background:#BD2C45; }
+  button:focus-visible, select:focus-visible{
+    outline:2px solid var(--brass);
+    outline-offset:2px;
+  }
+  select{
+    font-family:'Work Sans', sans-serif;
+    font-size:13px;
+    font-weight:600;
+    padding:8px 10px;
+    border-radius:7px;
+    background:var(--navy);
+    color:var(--cream);
+    border:1px solid rgba(201,162,39,0.4);
+  }
+  .controls .spacer{ flex:1; }
+  .controls label{ font-size:12px; color:var(--cream-dim); margin-right:6px; }
+
+  /* ---------- STAGE ---------- */
+  .stage{
+    display:grid;
+    grid-template-columns:1.05fr 0.95fr;
+    gap:16px;
+    align-items:start;
+  }
+  @media (max-width:760px){
+    .stage{ grid-template-columns:1fr; }
+  }
+
+  /* ---------- SCENE ---------- */
+  .scene{
+    background:linear-gradient(180deg, var(--navy-soft), var(--navy-deep));
+    border:1px solid rgba(255,255,255,0.06);
+    border-radius:10px;
+    padding:18px;
+    position:relative;
+    min-height:360px;
+  }
+  .scene h2, .console h2{
+    font-family:'Bebas Neue', sans-serif;
+    letter-spacing:1.5px;
+    font-size:16px;
+    margin:0 0 14px;
+    color:var(--brass);
+  }
+  .scene-row{ display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap; }
+
+  .door{
+    flex:0 0 64px;
+    height:160px;
+    border:2px dashed rgba(243,234,214,0.25);
+    border-radius:8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    writing-mode:vertical-rl;
+    text-orientation:mixed;
+    font-family:'Space Mono', monospace;
+    font-size:11px;
+    color:var(--cream-dim);
+    letter-spacing:2px;
+    position:relative;
+  }
+  .closed-banner{
+    position:absolute;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%) rotate(-8deg);
+    background:var(--red);
+    color:var(--cream);
+    font-family:'Bebas Neue', sans-serif;
+    font-size:13px;
+    letter-spacing:2px;
+    padding:4px 10px;
+    border-radius:3px;
+    display:none;
+    box-shadow:0 3px 8px rgba(0,0,0,0.5);
+    writing-mode:horizontal-tb;
+  }
+  .scene.finished .closed-banner{ display:block; }
+
+  .waiting-area{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    min-width:160px;
+  }
+  .waiting-label{ font-family:'Space Mono', monospace; font-size:11px; color:var(--cream-dim); }
+  .chairs{ display:flex; gap:10px; flex-wrap:wrap; }
+  .chair-slot{
+    width:78px; height:96px;
+    border-radius:6px;
+    border:2px dashed rgba(243,234,214,0.22);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    font-family:'Space Mono', monospace;
+    position:relative;
+    transition:border-color 0.2s ease;
+  }
+  .chair-slot::before{
+    content:"";
+    position:absolute;
+    top:-1px; left:8%; width:84%; height:6px;
+    background-image:radial-gradient(circle, var(--navy-deep) 2.5px, transparent 2.6px);
+    background-size:10px 10px;
+    background-position:center top;
+  }
+  .chair-slot.occupied{
+    border-style:solid;
+    border-color:var(--brass);
+    background:var(--leather);
+    animation:slide-in 0.4s ease;
+  }
+  .chair-slot .free-label{ font-size:10px; color:rgba(243,234,214,0.35); }
+  .chair-slot .num{ font-size:22px; font-weight:700; color:var(--cream); }
+  .chair-slot .tag{ font-size:9px; color:var(--cream-dim); margin-top:2px; }
+  @keyframes slide-in{
+    from{ transform:translateX(-18px); opacity:0; }
+    to{ transform:translateX(0); opacity:1; }
+  }
+
+  .barber-area{
+    margin-top:18px;
+    display:flex;
+    gap:16px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  .barber-chair{
+    width:130px; height:120px;
+    border-radius:8px;
+    background:linear-gradient(180deg,#7A4A30,var(--leather));
+    border:2px solid var(--brass);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+  }
+  .barber-chair .num{ font-family:'Space Mono', monospace; font-size:26px; font-weight:700; color:var(--cream); }
+  .barber-chair .empty-txt{ font-family:'Space Mono', monospace; font-size:11px; color:rgba(243,234,214,0.4); text-align:center; padding:0 8px; }
+  .scissors{
+    position:absolute;
+    top:-10px; right:-6px;
+    font-size:24px;
+    transform-origin:70% 30%;
+  }
+  .scissors.snip{ animation:snip 0.5s ease-in-out infinite; }
+  @keyframes snip{
+    0%,100%{ transform:rotate(0deg); }
+    50%{ transform:rotate(-22deg); }
+  }
+  .progress-track{
+    width:100%; height:5px;
+    background:rgba(0,0,0,0.35);
+    border-radius:3px;
+    overflow:hidden;
+    margin-top:10px;
+  }
+  .progress-fill{
+    height:100%;
+    width:0%;
+    background:var(--brass);
+    transition:width linear;
+  }
+  .barber-state-text{
+    font-family:'Space Mono', monospace;
+    font-size:13px;
+    color:var(--cream-dim);
+    max-width:220px;
+  }
+  .barber-state-text strong{ color:var(--cream); display:block; font-size:14px; margin-bottom:2px; }
+
+  .toast{
+    position:absolute;
+    left:18px; top:18px;
+    background:var(--red);
+    color:var(--cream);
+    font-family:'Space Mono', monospace;
+    font-size:12px;
+    padding:8px 12px;
+    border-radius:6px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.5);
+    animation:toast-in 0.3s ease, toast-out 0.3s ease 1s forwards;
+    z-index:5;
+  }
+  @keyframes toast-in{ from{ transform:translateY(-8px); opacity:0; } to{ transform:translateY(0); opacity:1; } }
+  @keyframes toast-out{ from{ opacity:1; } to{ opacity:0; transform:translateY(-8px); } }
+
+  /* ---------- CONSOLE / TICKET LOG ---------- */
+  .console{
+    background:var(--cream);
+    color:var(--ink);
+    border-radius:10px;
+    border:1px solid rgba(0,0,0,0.15);
+    padding:18px;
+    display:flex;
+    flex-direction:column;
+    min-height:360px;
+    max-height:560px;
+  }
+  .console h2{ color:var(--red); }
+  .ticket-roll{
+    flex:1;
+    overflow-y:auto;
+    font-family:'Space Mono', monospace;
+    font-size:12.5px;
+    line-height:1.6;
+    padding-right:6px;
+  }
+  .ticket-roll::-webkit-scrollbar{ width:8px; }
+  .ticket-roll::-webkit-scrollbar-thumb{ background:var(--cream-dim); border-radius:4px; }
+  .ticket-line{
+    padding:3px 0;
+    border-bottom:1px dashed rgba(33,24,16,0.12);
+    display:flex;
+    gap:8px;
+  }
+  .ticket-line .idx{ color:rgba(33,24,16,0.35); flex:0 0 28px; }
+  .ticket-line.reject{ color:var(--red); font-weight:700; }
+  .ticket-line.wake{ color:#8A5F1A; font-weight:700; }
+  .ticket-line.close{ color:var(--red); font-weight:700; }
+  .ticket-line.ok{ color:var(--ok); }
+  .empty-log{ color:rgba(33,24,16,0.4); font-style:italic; }
+
+  footer.note{
+    font-size:11.5px;
+    color:rgba(243,234,214,0.4);
+    text-align:center;
+    line-height:1.6;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .pole.spinning, .scissors.snip, .zzz, .chair-slot.occupied{ animation:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="signboard">
+    <div class="pole-wrap">
+      <div class="pole-cap"></div>
+      <div class="pole" id="pole"></div>
+      <div class="pole-cap"></div>
+      <div class="zzz" id="zzz">z z z</div>
+    </div>
+    <div class="sign-text">
+      <h1>Soneca Barber</h1>
+      <p>Visualização do problema clássico do Barbeiro Dorminhoco: 1 barbeiro, 1 cadeira de corte e 3 cadeiras de espera — o mesmo comportamento do script main.py, em forma de cena animada e registro de eventos.</p>
+    </div>
+    <div class="sign-status">
+      <strong id="statusLine">😴 Dormindo</strong>
+      <span id="waitingLine">Cadeiras de espera: 0/3</span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="primary" id="btnAuto">▶ Rodar simulação completa</button>
+    <button id="btnReset">↺ Reiniciar</button>
+    <div class="spacer"></div>
+    <label for="speed">Velocidade</label>
+    <select id="speed">
+      <option value="0.5">0.5×</option>
+      <option value="1" selected>1×</option>
+      <option value="2">2×</option>
+    </select>
+  </div>
+
+  <div class="stage">
+    <div class="scene" id="scene">
+      <h2>Barbearia</h2>
+      <div class="scene-row">
+        <div class="door">ENTRADA
+          <div class="closed-banner">FECHADO</div>
+        </div>
+        <div class="waiting-area">
+          <div class="waiting-label">Cadeiras de espera (máx. 3)</div>
+          <div class="chairs">
+            <div class="chair-slot" id="chair-0"><span class="free-label">livre</span></div>
+            <div class="chair-slot" id="chair-1"><span class="free-label">livre</span></div>
+            <div class="chair-slot" id="chair-2"><span class="free-label">livre</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="barber-area">
+        <div class="barber-chair" id="barberChair">
+          <span class="empty-txt">cadeira do barbeiro</span>
+        </div>
+        <div class="barber-state-text">
+          <strong id="barberStateBig">Barbeiro dormindo</strong>
+          <span id="barberStateSub">Aguardando o primeiro cliente chegar.</span>
+          <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="console">
+      <h2>Registro de eventos</h2>
+      <div class="ticket-roll" id="ticketRoll">
+        <div class="empty-log">Nenhum evento ainda — clique em "Rodar simulação completa" ou "Adicionar cliente".</div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="note">Trabalho de sistemas distribuídos feito por Beatriz da Costa Lauro e Brenda Bonaita de Oliverira.</footer>
+</div>
+
+<script>
+(function(){
+  const CADEIRAS_ESPERA = 3;
+  const BASE = { haircut: 2200, arrivalGap: 650, wavePause: 2800, finalPause: 2400 };
+
+  let speedMultiplier = 1;
+  let session = 0;
+  let nextCustomerId = 1;
+  let logIndex = 0;
+  let waitingSlots = [null, null, null]; // customer ids or null
+  let closingRequested = false;
+  let finished = false;
+  let autoRunning = false;
+
+  // ---- async queue mirroring multiprocessing.Queue(maxsize=3) ----
+  function makeQueue(maxSize){
+    return {
+      items: [],
+      maxSize,
+      waiters: [],
+      tryPush(item){
+        if(this.items.length >= this.maxSize) return false;
+        this.items.push(item);
+        this._notify();
+        return true;
+      },
+      pushPriority(item){
+        this.items.push(item);
+        this._notify();
+      },
+      isEmpty(){ return this.items.length === 0; },
+      size(){ return this.items.length; },
+      async get(){
+        if(this.items.length === 0){
+          await new Promise(res => this.waiters.push(res));
+        }
+        return this.items.shift();
+      },
+      _notify(){
+        if(this.waiters.length){ const w = this.waiters.shift(); w(); }
+      }
+    };
+  }
+
+  let fila = makeQueue(CADEIRAS_ESPERA);
+
+  // ---- DOM refs ----
+  const $ = id => document.getElementById(id);
+  const pole = $('pole'), zzz = $('zzz');
+  const statusLine = $('statusLine'), waitingLine = $('waitingLine');
+  const ticketRoll = $('ticketRoll');
+  const chairEls = [$('chair-0'), $('chair-1'), $('chair-2')];
+  const barberChair = $('barberChair');
+  const barberStateBig = $('barberStateBig'), barberStateSub = $('barberStateSub');
+  const progressFill = $('progressFill');
+  const sceneEl = $('scene');
+  const btnAuto = $('btnAuto'), btnReset = $('btnReset');
+  const speedSel = $('speed');
+
+  speedSel.addEventListener('change', () => { speedMultiplier = parseFloat(speedSel.value); });
+
+  function dur(ms){ return ms / speedMultiplier; }
+  function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+  function log(text, cls){
+    if(logIndex === 0){ ticketRoll.innerHTML = ''; }
+    const line = document.createElement('div');
+    line.className = 'ticket-line' + (cls ? ' ' + cls : '');
+    logIndex += 1;
+    line.innerHTML = '<span class="idx">#' + String(logIndex).padStart(3,'0') + '</span><span>' + text + '</span>';
+    ticketRoll.appendChild(line);
+    ticketRoll.scrollTop = ticketRoll.scrollHeight;
+  }
+
+  function renderWaiting(){
+    let occupied = 0;
+    for(let i=0;i<3;i++){
+      const el = chairEls[i];
+      const id = waitingSlots[i];
+      if(id){
+        occupied++;
+        el.className = 'chair-slot occupied';
+        el.innerHTML = '<span class="num">'+id+'</span><span class="tag">Cliente</span>';
+      } else {
+        el.className = 'chair-slot';
+        el.innerHTML = '<span class="free-label">livre</span>';
+      }
+    }
+    waitingLine.textContent = 'Cadeiras de espera: ' + occupied + '/3';
+  }
+
+  function placeInWaiting(id){
+    for(let i=0;i<3;i++){
+      if(waitingSlots[i] === null){ waitingSlots[i] = id; break; }
+    }
+    renderWaiting();
+  }
+  function removeFromWaiting(id){
+    for(let i=0;i<3;i++){
+      if(waitingSlots[i] === id){ waitingSlots[i] = null; break; }
+    }
+    renderWaiting();
+  }
+
+  function setPole(spinning){
+    pole.classList.toggle('spinning', spinning);
+    zzz.style.opacity = spinning ? '0' : '';
+  }
+
+  function setBarberSleeping(){
+    setPole(false);
+    statusLine.textContent = '😴 Dormindo';
+    barberStateBig.textContent = 'Barbeiro dormindo';
+    barberStateSub.textContent = 'Aguardando o próximo cliente chegar.';
+    barberChair.innerHTML = '<span class="empty-txt">cadeira do barbeiro</span>';
+    progressFill.style.transition = 'none';
+    progressFill.style.width = '0%';
+  }
+
+  function setBarberCutting(id, durationMs){
+    setPole(true);
+    statusLine.textContent = '✂️ Cortando (Cliente ' + id + ')';
+    barberStateBig.textContent = 'Cortando cabelo';
+    barberStateSub.textContent = 'Cliente ' + id + ' está na cadeira agora.';
+    barberChair.innerHTML = '<span class="num">'+id+'</span><span class="scissors snip">✂️</span>';
+    progressFill.style.transition = 'none';
+    progressFill.style.width = '0%';
+    requestAnimationFrame(() => {
+      progressFill.style.transition = 'width ' + durationMs + 'ms linear';
+      progressFill.style.width = '100%';
+    });
+  }
+
+  function setBarberClosed(){
+    setPole(false);
+    statusLine.textContent = '🔒 Fechado';
+    barberStateBig.textContent = 'Expediente encerrado';
+    barberStateSub.textContent = 'Soneca Barber fechada por hoje.';
+    sceneEl.classList.add('finished');
+  }
+
+  function showToast(text){
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = text;
+    sceneEl.appendChild(t);
+    setTimeout(() => t.remove(), 1400);
+  }
+
+  function setControlsState(){
+    btnAuto.disabled = finished || closingRequested || autoRunning;
+  }
+
+  // ---- barber process ----
+  async function barberLoop(mySession){
+    let dormindo = true;
+    while(true){
+      if(mySession !== session) return;
+      if(dormindo){
+        log('Barbearia vazia: o barbeiro senta e tira uma soneca... 😴', 'wake');
+        setBarberSleeping();
+      }
+      const msg = await fila.get();
+      if(mySession !== session) return;
+
+      if(msg === 'FIM'){
+        log('💈 Barbeiro: encerrando expediente.', 'close');
+        finished = true;
+        setBarberClosed();
+        setControlsState();
+        return;
+      }
+
+      removeFromWaiting(msg);
+
+      if(dormindo){
+        log('🗣️ Cliente ' + msg + ': ACORDA! Hora de trabalhar!', 'wake');
+        dormindo = false;
+      } else {
+        log('💈 Barbeiro: PRÓXIMO! (chamando Cliente ' + msg + ')');
+      }
+
+      log('💺 Cliente ' + msg + ': sentou na cadeira do barbeiro.');
+      log('✂️ Barbeiro: cortando o cabelo do Cliente ' + msg + '...');
+      const cutMs = dur(BASE.haircut);
+      setBarberCutting(msg, cutMs);
+      await sleep(cutMs);
+      if(mySession !== session) return;
+
+      log('✅ Barbeiro: terminou o corte do Cliente ' + msg + '.', 'ok');
+
+      if(fila.isEmpty()){
+        log('😴 Barbeiro: não há mais clientes. Vou voltar a dormir.');
+        dormindo = true;
+      } else {
+        dormindo = false;
+      }
+    }
+  }
+
+  // ---- customer arrival ----
+  function arrival(id){
+    if(finished) return;
+    log('🚶 Cliente ' + id + ': chegou na barbearia.');
+    const ok = fila.tryPush(id);
+    if(ok){
+      placeInWaiting(id);
+      log('🪑 Cliente ' + id + ': sentou em uma cadeira de espera.');
+      log('📋 Clientes aguardando: ' + fila.size());
+    } else {
+      log('❌ Cliente ' + id + ': todas as 3 cadeiras de espera estão ocupadas. Indo embora!', 'reject');
+      showToast('Cliente ' + id + ': lotado! 🙅');
+    }
+  }
+
+  function closeShop(){
+    if(finished || closingRequested) return;
+    closingRequested = true;
+    setControlsState();
+    fila.pushPriority('FIM');
+  }
+
+  async function runAutoSequence(){
+    if(autoRunning || finished || closingRequested) return;
+    autoRunning = true;
+    setControlsState();
+    const mySession = session;
+
+    log('============================', undefined);
+    log('Primeira leva de clientes');
+    log('============================');
+
+    for(let i=0;i<5;i++){
+      if(mySession !== session) return;
+      arrival(nextCustomerId++);
+      await sleep(dur(BASE.arrivalGap));
+    }
+
+    if(mySession !== session) return;
+    await sleep(dur(BASE.wavePause));
+
+    if(mySession !== session) return;
+    log('============================');
+    log('Novo cliente chegando');
+    log('============================');
+    arrival(nextCustomerId++);
+
+    await sleep(dur(BASE.finalPause));
+    if(mySession !== session) return;
+
+    closeShop();
+    autoRunning = false;
+    setControlsState();
+  }
+
+  function resetAll(){
+    session += 1;
+    nextCustomerId = 1;
+    logIndex = 0;
+    waitingSlots = [null, null, null];
+    closingRequested = false;
+    finished = false;
+    autoRunning = false;
+    fila = makeQueue(CADEIRAS_ESPERA);
+    sceneEl.classList.remove('finished');
+    ticketRoll.innerHTML = '<div class="empty-log">Nenhum evento ainda — clique em "Rodar simulação completa" ou "Adicionar cliente".</div>';
+    renderWaiting();
+    setBarberSleeping();
+    setControlsState();
+    barberLoop(session);
+  }
+
+  btnAuto.addEventListener('click', runAutoSequence);
+  btnReset.addEventListener('click', resetAll);
+
+  // ---- init ----
+  renderWaiting();
+  setBarberSleeping();
+  setControlsState();
+  barberLoop(session);
+})();
+</script>
+</body>
+</html>
