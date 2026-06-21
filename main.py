@@ -2,103 +2,141 @@ import multiprocessing
 import time
 import queue
 
+CADEIRAS_ESPERA = 3
+
+
 def processo_barbeiro(fila_espera):
     """
     Processo que representa o Barbeiro.
-    Gerencia o estado de dormir, acordar e cortar cabelo com base nas mensagens recebidas.
+    Gerencia o estado de dormir, acordar e cortar cabelo com base nos clientes recebidos.
     """
     dormindo = True
 
     while True:
-        # Situação 1: Se o barbeiro está sem clientes, ele dorme [cite: 11, 16]
+        # Situação 1: barbeiro dormindo
         if dormindo:
-            print("\n[SITUAÇÃO 1] Abertura/Vazia: Todas as cadeiras vazias. O barbeiro senta e tira uma pestana... Zzzzz")
+            print(
+                "\n[SITUAÇÃO 1] Barbearia vazia: "
+                "O barbeiro senta e tira uma pestana... Zzzzz"
+            )
 
-        # O método .get() é bloqueante. O processo "dorme" até receber uma mensagem (um cliente).
+        # Espera até chegar um cliente
         msg_cliente_id = fila_espera.get()
 
-        # Condição de parada para encerrar o programa
+        # Encerramento do programa
         if msg_cliente_id == "FIM":
+            print("\n💈 Barbeiro: Encerrando expediente.")
             break
 
-        # Verifica se o barbeiro estava dormindo quando o cliente chegou
+        # Cliente acorda o barbeiro
         if dormindo:
-            print(f"\n🗣️ Cliente {msg_cliente_id}: ACORDA! Hora de trabalhar seu dorminhoco! [cite: 12]")
+            print(
+                f"\n🗣️ Cliente {msg_cliente_id}: "
+                "ACORDA! Hora de trabalhar!"
+            )
             dormindo = False
         else:
-            # Se não estava dormindo, apenas chama o próximo da fila de espera [cite: 14]
-            print(f"\n💈 Barbeiro: PRÓXIMO! (Chamando Cliente {msg_cliente_id})")
+            print(
+                f"\n💈 Barbeiro: PRÓXIMO! "
+                f"(Chamando Cliente {msg_cliente_id})"
+            )
 
-        # Simula o tempo de atendimento do corte de cabelo
+        print(f"💺 Cliente {msg_cliente_id}: Sentou na cadeira do barbeiro.")
+
+        # Simulação do corte
         print(f"✂️ Barbeiro: Cortando o cabelo do Cliente {msg_cliente_id}...")
-        time.sleep(2) 
+        time.sleep(2)
         print(f"✅ Barbeiro: Terminou o corte do Cliente {msg_cliente_id}.")
 
-        # Após terminar, verifica se a fila de espera está vazia para voltar a dormir
+        # Verifica se ainda existem clientes aguardando
         if fila_espera.empty():
+            print("😴 Barbeiro: Não há mais clientes. Vou voltar a dormir.")
             dormindo = True
+        else:
+            dormindo = False
 
 
 def processo_cliente(cliente_id, fila_espera):
     """
-    Processo que representa um Cliente chegando na barbearia.
-    Tenta enviar uma mensagem (seu ID) para a fila de espera (as cadeiras).
+    Processo que representa um cliente chegando na barbearia.
     """
     print(f"🚶 Cliente {cliente_id}: Chegou na barbearia.")
+
     try:
-        # O put_nowait tenta inserir a mensagem na fila sem bloquear.
-        # Se a fila (3 cadeiras de espera) já estiver no limite, ele lança a exceção queue.Full.
         fila_espera.put_nowait(cliente_id)
-        
-        # O cliente conseguiu entrar: ou foi direto para a cadeira do barbeiro ou sentou na espera.
-        print(f"🪑 Cliente {cliente_id}: Entrou (Foi atendido ou sentou em uma das cadeiras de espera).")
-    
+
+        print(f"🪑 Cliente {cliente_id}: Sentou em uma cadeira de espera.")
+
+        try:
+            print(f"📋 Clientes aguardando: {fila_espera.qsize()}")
+        except NotImplementedError:
+            pass
+
     except queue.Full:
-        # Situação 3: Todas as cadeiras de espera ocupadas. O cliente vai embora.
-        print(f"❌ [SITUAÇÃO 3] Cliente {cliente_id}: Todas as 3 cadeiras de espera estão ocupadas. Indo embora!")
+        print(
+            f"❌ [SITUAÇÃO 3] Cliente {cliente_id}: "
+            f"Todas as {CADEIRAS_ESPERA} cadeiras de espera estão ocupadas. "
+            f"Indo embora!"
+        )
 
 
-if __name__ == '__main__':
-    # Inicializa a fila de mensagens (IPC) que atuará como as cadeiras de espera 
-    fila_cadeiras_espera = multiprocessing.Queue(maxsize=3)
+if __name__ == "__main__":
+    multiprocessing.freeze_support()
 
-    # Inicia o processo independente do Barbeiro
-    barbeiro_proc = multiprocessing.Process(target=processo_barbeiro, args=(fila_cadeiras_espera,))
+    fila_cadeiras_espera = multiprocessing.Queue(
+        maxsize=CADEIRAS_ESPERA
+    )
+
+    # Inicia o barbeiro
+    barbeiro_proc = multiprocessing.Process(
+        target=processo_barbeiro,
+        args=(fila_cadeiras_espera,)
+    )
     barbeiro_proc.start()
 
-    # Delay para demonstrar a Situação 1 com clareza no terminal
-    time.sleep(1)
-
-    print("\n--- [SITUAÇÃO 2] Chegada de múltiplos clientes simultaneamente ---")
     clientes_procs = []
 
-    # Enviamos 5 clientes quase ao mesmo tempo para lotar a barbearia.
-    # - O Cliente 1 acordará o barbeiro.
-    # - Os Clientes 2, 3 e 4 ocuparão as 3 cadeiras de espera.
-    # - O Cliente 5 encontrará a barbearia cheia e irá embora (Situação 3).
+    print("\n==============================")
+    print("Primeira leva de clientes")
+    print("==============================")
+
+    # Envia 5 clientes
     for i in range(1, 6):
-        p_cliente = multiprocessing.Process(target=processo_cliente, args=(i, fila_cadeiras_espera))
+        p_cliente = multiprocessing.Process(
+            target=processo_cliente,
+            args=(i, fila_cadeiras_espera)
+        )
+
         clientes_procs.append(p_cliente)
         p_cliente.start()
-        # Delay minúsculo apenas para a impressão no terminal não embaralhar
+
+        # Pequeno atraso entre chegadas
         time.sleep(0.1)
 
-    # Aguarda todos os processos dos clientes da primeira leva finalizarem seu fluxo
+    # Aguarda todos os clientes terminarem
     for p in clientes_procs:
         p.join()
 
-    # Dá tempo para o barbeiro atender alguns clientes e liberar cadeiras
+    # Aguarda alguns cortes acontecerem
     time.sleep(5)
-    
-    print("\n--- Chega mais um cliente mais tarde (com o barbeiro já trabalhando) ---")
-    p_cliente6 = multiprocessing.Process(target=processo_cliente, args=(6, fila_cadeiras_espera))
+
+    print("\n==============================")
+    print("Novo cliente chegando")
+    print("==============================")
+
+    p_cliente6 = multiprocessing.Process(
+        target=processo_cliente,
+        args=(6, fila_cadeiras_espera)
+    )
+
     p_cliente6.start()
     p_cliente6.join()
 
-    # Aguarda o barbeiro concluir o serviço de todos na fila
+    # Aguarda atendimento terminar
     time.sleep(10)
 
-    # Envia a mensagem de encerramento e fecha o processo
+    # Encerra o barbeiro
     fila_cadeiras_espera.put("FIM")
     barbeiro_proc.join()
-    print("\nExpediente encerrado. Soneca Barber fechada!")
+
+    print("\n🏁 Expediente encerrado. Soneca Barber fechada!")
