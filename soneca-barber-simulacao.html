@@ -414,6 +414,8 @@
 
   <div class="controls">
     <button class="primary" id="btnAuto">▶ Rodar simulação completa</button>
+    <button id="btnAddClient">+ Adicionar cliente</button>
+    <button id="btnClose">🔒 Encerrar expediente</button>
     <button id="btnReset">↺ Reiniciar</button>
     <div class="spacer"></div>
     <label for="speed">Velocidade</label>
@@ -460,13 +462,13 @@
     </div>
   </div>
 
-  <footer class="note">Trabalho de sistemas distribuídos feito por Beatriz da Costa Lauro e Brenda Bonaita de Oliverira.</footer>
+  <footer class="note">Trabalho de sistemas distribuídos feito por Beatriz da Costa Lauro e Brenda Bonaita de Oliveira.</footer>
 </div>
 
 <script>
 (function(){
   const CADEIRAS_ESPERA = 3;
-  const BASE = { haircut: 2200, arrivalGap: 650, wavePause: 2800, finalPause: 2400 };
+  const BASE = { haircut: 2200, arrivalGap: 300, wavePause: 2800, finalPause: 2400 };
 
   let speedMultiplier = 1;
   let session = 0;
@@ -520,6 +522,7 @@
   const progressFill = $('progressFill');
   const sceneEl = $('scene');
   const btnAuto = $('btnAuto'), btnReset = $('btnReset');
+  const btnAddClient = $('btnAddClient'), btnClose = $('btnClose');
   const speedSel = $('speed');
 
   speedSel.addEventListener('change', () => { speedMultiplier = parseFloat(speedSel.value); });
@@ -613,7 +616,10 @@
   }
 
   function setControlsState(){
-    btnAuto.disabled = finished || closingRequested || autoRunning;
+    const locked = finished || closingRequested;
+    btnAuto.disabled = locked || autoRunning;
+    btnAddClient.disabled = locked;
+    btnClose.disabled = locked || autoRunning;
   }
 
   // ---- barber process ----
@@ -622,7 +628,7 @@
     while(true){
       if(mySession !== session) return;
       if(dormindo){
-        log('Barbearia vazia: o barbeiro senta e tira uma soneca... 😴', 'wake');
+        log('[SITUAÇÃO 1] Barbearia vazia: o barbeiro senta e tira uma soneca... 😴', 'wake');
         setBarberSleeping();
       }
       const msg = await fila.get();
@@ -639,7 +645,7 @@
       removeFromWaiting(msg);
 
       if(dormindo){
-        log('🗣️ Cliente ' + msg + ': ACORDA! Hora de trabalhar!', 'wake');
+        log('🗣️ Cliente ' + msg + ': ACORDA! Hora de trabalhar seu dorminhoco!', 'wake');
         dormindo = false;
       } else {
         log('💈 Barbeiro: PRÓXIMO! (chamando Cliente ' + msg + ')');
@@ -658,6 +664,7 @@
         log('😴 Barbeiro: não há mais clientes. Vou voltar a dormir.');
         dormindo = true;
       } else {
+        log('[SITUAÇÃO 2] 📋 Ainda há clientes nas cadeiras de espera (' + fila.size() + ' aguardando).');
         dormindo = false;
       }
     }
@@ -673,7 +680,7 @@
       log('🪑 Cliente ' + id + ': sentou em uma cadeira de espera.');
       log('📋 Clientes aguardando: ' + fila.size());
     } else {
-      log('❌ Cliente ' + id + ': todas as 3 cadeiras de espera estão ocupadas. Indo embora!', 'reject');
+      log('❌ [SITUAÇÃO 3] Cliente ' + id + ': todas as 3 cadeiras de espera estão ocupadas. Indo embora!', 'reject');
       showToast('Cliente ' + id + ': lotado! 🙅');
     }
   }
@@ -737,6 +744,8 @@
 
   btnAuto.addEventListener('click', runAutoSequence);
   btnReset.addEventListener('click', resetAll);
+  btnAddClient.addEventListener('click', () => arrival(nextCustomerId++));
+  btnClose.addEventListener('click', closeShop);
 
   // ---- init ----
   renderWaiting();
