@@ -1,6 +1,6 @@
-# 💈 Soneca Barber - Trabalho de Sistemas Distribuídos
+# 💈 Soneca Barber
 
-Aplicação desenvolvida como trabalho prático da disciplina de **Sistemas Distribuídos**. O projeto implementa o problema clássico de concorrência conhecido como "Barbeiro Dorminhoco" (*Sleeping Barber*), utilizando a linguagem Python para demonstrar a comunicação e sincronização através da troca de mensagens entre processos independentes.
+> Trabalho prático da disciplina de **Sistemas Distribuídos** — implementação do problema clássico de concorrência **Barbeiro Dorminhoco** (*Sleeping Barber*) com comunicação via sockets TCP em Python.
 
 ---
 
@@ -9,82 +9,112 @@ Aplicação desenvolvida como trabalho prático da disciplina de **Sistemas Dist
 - Beatriz da Costa Lauro
 - Brenda Bonaita de Oliveira
 
+**Curso:** Sistemas de Informação — 7° Período  
+**Instituição:** Universidade do Estado de Minas Gerais (UEMG)
+
 ---
 
 ## 🎯 Objetivo do Projeto
 
-Implementar a simulação da barbearia **Soneca Barber** através de troca de mensagens entre processos. O objetivo prático é aplicar conceitos de concorrência, comunicação interprocessos (IPC) e controle de filas para garantir que o barbeiro seja acordado quando há clientes, atenda o próximo da fila adequadamente, e que o limite de cadeiras de espera seja respeitado.
+Implementar a simulação da barbearia **Soneca Barber** através de troca de mensagens real entre processos isolados, aplicando conceitos de:
+
+- Comunicação interprocessos (IPC) em rede
+- Controle de filas remotas
+- Concorrência distribuída
+
+O barbeiro é acordado quando há clientes, atende o próximo da fila adequadamente através de chamadas remotas e respeita rigidamente o limite das cadeiras de espera.
 
 ---
 
-## 🧩 Funcionalidades Implementadas
-### ✅ Situações Obrigatórias Demonstradas
+## 🧩 Situações Obrigatórias Demonstradas
 
-- **[SITUAÇÃO 1] Abertura da barbearia**: O programa inicia com todas as cadeiras vazias e o processo do barbeiro entra em estado de dormência, tirando uma pestana.
-- **[SITUAÇÃO 2] Atendimento e Espera**: Quando clientes chegam, o barbeiro atende um cliente, enquanto os demais ocupam as cadeiras de espera (representadas pela fila de mensagens).
-- **[SITUAÇÃO 3] Desistência por Lotação**: Se a barbearia recebe um cliente e todas as 3 cadeiras de espera já estão ocupadas, o cliente vai embora imediatamente sem ser atendido.
+| Etiqueta | Situação |
+|----------|----------|
+| `[SITUAÇÃO 1]` | **Abertura da barbearia** — O programa inicia com todas as cadeiras vazias e o processo do barbeiro entra em estado de dormência (Zzzzz). |
+| `[SITUAÇÃO 2]` | **Atendimento e Espera** — Novos clientes chegam enquanto o barbeiro está ocupado e ocupam as cadeiras de espera disponíveis (fila remota com limite de 3). |
+| `[SITUAÇÃO 3]` | **Desistência por Lotação** — Cliente chega com todas as 3 cadeiras já ocupadas; a mensagem é recusada e o cliente vai embora imediatamente. |
 
-> As três situações aparecem destacadas com essas mesmas etiquetas (`[SITUAÇÃO 1]`, `[SITUAÇÃO 2]`, `[SITUAÇÃO 3]`) tanto nos logs do terminal (`main.py`) quanto no registro de eventos da simulação visual (`soneca-barber-simulacao.html`), facilitando a identificação durante a correção.
-
-### ✨ Aspectos Técnicos e Ferramentas
-
-- **Multiprocessamento**: O barbeiro e cada cliente rodam em instâncias de processos de sistema operacional diferentes usando a biblioteca nativa `multiprocessing`.
-- **Comunicação por Fila (Queue)**: Uma fila com tamanho máximo definido (`maxsize=3`) é utilizada para a troca segura de mensagens (IDs dos clientes) entre os processos, simulando fisicamente as cadeiras de espera.
+As três situações aparecem destacadas com as etiquetas exatas nos logs dos scripts Python **e** no registro de eventos da simulação visual (`soneca-barber-simulacao.html`).
 
 ---
 
-## ▶️ Como Executar
+## ✨ Aspectos Técnicos e IPC
 
-### Script Python (`main.py`)
-
-1. **Clone o repositório** para sua máquina local.
-2. **Certifique-se** de ter o Python 3 instalado.
-3. **Abra o terminal** na raiz do projeto.
-4. **Execute a aplicação** com o comando `python main.py`.
-
-Acompanhe os logs no terminal que detalham a chegada dos clientes, o estado do barbeiro e a ocupação das cadeiras.
-
-### Simulação Visual (`soneca-barber-simulacao.html`)
-
-Não requer instalação de nada. Basta **abrir o arquivo `soneca-barber-simulacao.html` diretamente em qualquer navegador moderno** (Chrome, Firefox, Edge), dando duplo clique nele ou arrastando-o para a janela do navegador.
-
----
-
-## 🖥️ Simulação Interativa (HTML)
-
-Além do script Python (entrega oficial do trabalho), o projeto inclui `soneca-barber-simulacao.html`: uma visualização interativa, escrita em HTML/CSS/JavaScript puro (sem dependências), que reproduz **a mesma lógica de fila com `maxsize=3`** usada em `main.py` — ou seja, as mesmas regras de concorrência, só que com uma interface gráfica para facilitar a apresentação do trabalho.
-
-**Elementos da cena:**
-- Uma placa giratória de barbearia (*barber pole*) que gira enquanto o barbeiro corta cabelo e exibe "Zzz" quando ele está dormindo.
-- 3 cadeiras de espera, que se preenchem com o ID do cliente assim que ele chega.
-- A cadeira do barbeiro, mostrando o cliente atual sendo atendido, com tesoura animada e barra de progresso do corte.
-- Um console no estilo "rolo de senha" com o registro de todos os eventos em tempo real — as mesmas mensagens impressas por `main.py`, incluindo as etiquetas `[SITUAÇÃO 1]`, `[SITUAÇÃO 2]` e `[SITUAÇÃO 3]`.
-- Um aviso (*toast*) vermelho sempre que um cliente é recusado por lotação.
-
-**Controles disponíveis:**
-
-| Botão | Ação |
-|---|---|
-| ▶ Rodar simulação completa | Dispara automaticamente a mesma sequência de chegadas do `main.py`: uma leva rápida de 5 clientes (gerando as Situações 2 e 3) seguida de um 6º cliente posterior, demonstrando que o sistema continua funcionando normalmente. |
-| + Adicionar cliente | Adiciona manualmente um cliente por vez, a qualquer momento — útil para testar/demonstrar qualquer uma das três situações sob demanda. |
-| 🔒 Encerrar expediente | Envia a mensagem de controle `"FIM"` para o barbeiro, encerrando o expediente manualmente. |
-| ↺ Reiniciar | Restaura a cena para o estado inicial (cadeiras vazias, barbeiro dormindo). |
-| Velocidade (0.5×/1×/2×) | Acelera ou desacelera todas as animações e tempos de corte proporcionalmente. |
-
-> ⚠️ A simulação em HTML é apenas uma ferramenta de apoio visual para apresentação/estudo. Conforme o enunciado, **a entrega oficial do trabalho é o código Python documentado dos processos** (`main.py`).
+- **Processos Isolados no S.O.** — O barbeiro e cada cliente rodam em instâncias totalmente independentes, com espaços de memória próprios e PIDs distintos (sem threads ou memória compartilhada global).
+- **Servidor de Mensagens TCP (`BaseManager`)** — O processo do barbeiro disponibiliza um servidor via `multiprocessing.managers.BaseManager`, expondo o objeto `Barbearia` remotamente por proxy TCP autenticado.
+- **Comunicação por Clientes Distribuídos** — Cada execução do cliente conecta-se ao servidor via sockets TCP e invoca métodos remotos (`barbearia.tentar_sentar(id)`) para enviar a mensagem de chegada.
+- **Fila Protegida (`Queue`)** — As 3 cadeiras de espera são gerenciadas por `queue.Queue(maxsize=3)`, garantindo atomicidade e comportamento síncrono das requisições.
 
 ---
 
 ## 🗂️ Estrutura do Código
 
-O código-fonte está estruturado de forma modular e clara:
+```
+sonecaBarber/
+├── barbeiro.py                   # Servidor TCP + loop consumidor da fila
+├── cliente.py                    # Processo cliente isolado (recebe ID via argv)
+├── demonstracao.py               # Script orquestrador automático
+└── soneca-barber-simulacao.html  # Interface visual interativa (abre no navegador)
+```
 
-- **`processo_barbeiro`**: Função que mantém um loop contínuo gerenciando o estado do barbeiro (dormindo ou trabalhando). Ela retira clientes da fila e simula o tempo de corte de cabelo.
-- **`processo_cliente`**: Função que representa a chegada de um cliente na barbearia. Ela tenta colocar uma mensagem (seu ID) na fila de espera e lida com a exceção caso a barbearia esteja lotada.
-- **`_enviar_leva_de_clientes`**: Função auxiliar que dispara um lote de processos `processo_cliente` em sequência (com pequeno atraso entre chegadas) e aguarda todos terminarem.
-- **`main` / `__main__`**: Responsável por instanciar a `Queue`, iniciar o processo do barbeiro e enviar levas de clientes em tempos calculados para forçar e demonstrar as três situações exigidas pelo problema.
-- **`soneca-barber-simulacao.html`**: Visualização interativa e independente (não faz parte da entrega formal) que espelha a mesma lógica de fila/estados para fins de apresentação.
+### Descrição dos arquivos
+
+**`barbeiro.py`**  
+Gerencia o processo principal do Barbeiro e a infraestrutura de rede. Cria a classe `Barbearia` protegida por travas, inicializa a thread do servidor de mensagens TCP na porta `50000` e executa o loop consumidor que retira IDs da fila distribuída para processar os cortes.
+
+**`cliente.py`**  
+Representa a unidade isolada de um cliente. É invocado com um ID via argumento de linha de comando (`sys.argv`), estabelece conexão TCP com o `BaseManager` do barbeiro, obtém o proxy da barbearia e faz a postagem síncrona da chegada — tratando retorno de sucesso ou rejeição por lotação.
+
+**`demonstracao.py`**  
+O script maestro do projeto. Automatiza o setup dos sockets, injeta atrasos controlados com `time.sleep`, dispara lotes sequenciais de processos via `subprocess.Popen` e encerra com a mensagem de controle `"FIM"`.
+
+**`soneca-barber-simulacao.html`**  
+Camada visual independente em JavaScript Vanilla, com fila de promessas assíncronas que espelha fielmente as regras e restrições dos scripts Python — incluindo a comunicação com o servidor local em `127.0.0.1:50000`.
 
 ---
 
-*Projeto desenvolvido para a disciplina de Sistemas Distribuídos do 7° Período do curso de Sistemas de Informação da Universidade do Estado de Minas Gerais (UEMG).*
+## ▶️ Como Executar
+
+### Opção 1 — Script Orquestrador (recomendado)
+
+```bash
+python demonstracao.py
+```
+
+O script inicia automaticamente o servidor em plano de fundo (`barbeiro.py`), aguarda a inicialização do socket TCP e dispara lotes sequenciais de processos (`cliente.py`) simulando picos de chegada e o encerramento do expediente.
+
+---
+
+### Opção 2 — Simulação Visual
+
+Abra o arquivo `soneca-barber-simulacao.html` diretamente no navegador (Chrome, Firefox, Edge ou Safari). Não requer instalação de dependências.
+
+---
+
+## 🖥️ Simulação Interativa (HTML)
+
+A interface gráfica espelha a mesma cadência de temporização e lógica de fila distribuída com `maxsize=3`, simulando inclusive a comunicação com o servidor local em `127.0.0.1:50000`.
+
+### Elementos visuais
+
+- **3 Cadeiras de Espera** — Exibem slots livres ou ocupados com o número do cliente na fila.
+- **Cadeira de Corte** — Mostra o cliente em atendimento e barra de progresso em tempo real.
+- **Console de Eventos** — Log idêntico ao terminal Python, com as marcações `[SITUAÇÃO 1]`, `[SITUAÇÃO 2]` e `[SITUAÇÃO 3]`.
+
+### Controles
+
+| Botão | Ação |
+|-------|------|
+| ▶ Rodar simulação completa | Executa a sequência programada: onda de 5 clientes simultâneos + pausa + cliente 6 + encerramento. |
+| + Adicionar cliente | Dispara manualmente um novo processo cliente. |
+| 🔒 Encerrar expediente | Transmite a mensagem `"FIM"` — barbeiro conclui atendimentos e encerra o servidor. |
+| ↺ Reiniciar | Limpa conexões, esvazia a fila e recoloca o barbeiro em repouso. |
+| Velocidade (0.5×/1×/2×) | Ajusta a escala de tempo das animações e rotinas assíncronas. |
+
+---
+
+## 🔧 Requisitos
+
+- Python 3.8+
+- Módulos da biblioteca padrão: `multiprocessing`, `queue`, `subprocess`, `socket`, `time`, `sys`
+- Navegador moderno para a simulação visual (sem dependências externas)

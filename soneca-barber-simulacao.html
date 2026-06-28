@@ -468,13 +468,14 @@
 <script>
 (function(){
   const CADEIRAS_ESPERA = 3;
-  const BASE = { haircut: 2200, arrivalGap: 300, wavePause: 2800, finalPause: 2400 };
+  // Ajustando as durações para refletir os scripts Python (2s de corte, 0.1s de intervalo)
+  const BASE = { haircut: 2000, arrivalGap: 100, wavePause: 7000, finalPause: 8000 };
 
   let speedMultiplier = 1;
   let session = 0;
   let nextCustomerId = 1;
   let logIndex = 0;
-  let waitingSlots = [null, null, null]; // customer ids or null
+  let waitingSlots = [null, null, null];
   let closingRequested = false;
   let finished = false;
   let autoRunning = false;
@@ -579,7 +580,7 @@
     setPole(false);
     statusLine.textContent = '😴 Dormindo';
     barberStateBig.textContent = 'Barbeiro dormindo';
-    barberStateSub.textContent = 'Aguardando o próximo cliente chegar.';
+    barberStateSub.textContent = 'Aguardando o primeiro cliente chegar.';
     barberChair.innerHTML = '<span class="empty-txt">cadeira do barbeiro</span>';
     progressFill.style.transition = 'none';
     progressFill.style.width = '0%';
@@ -628,14 +629,14 @@
     while(true){
       if(mySession !== session) return;
       if(dormindo){
-        log('[SITUAÇÃO 1] Barbearia vazia: o barbeiro senta e tira uma soneca... 😴', 'wake');
+        log('[SITUAÇÃO 1] Barbearia vazia: o barbeiro senta na cadeira e tira uma pestana... Zzzzz', 'wake');
         setBarberSleeping();
       }
       const msg = await fila.get();
       if(mySession !== session) return;
 
       if(msg === 'FIM'){
-        log('💈 Barbeiro: encerrando expediente.', 'close');
+        log('💈 Barbeiro: Encerrando expediente.', 'close');
         finished = true;
         setBarberClosed();
         setControlsState();
@@ -689,6 +690,7 @@
     if(finished || closingRequested) return;
     closingRequested = true;
     setControlsState();
+    log('📴 Sinal de encerramento enviado ao Barbeiro.', 'close');
     fila.pushPriority('FIM');
   }
 
@@ -698,9 +700,9 @@
     setControlsState();
     const mySession = session;
 
-    log('============================', undefined);
-    log('Primeira leva de clientes');
-    log('============================');
+    log('=======================================================', undefined);
+    log('Primeira leva: 5 clientes chegando em sequência rápida');
+    log('=======================================================');
 
     for(let i=0;i<5;i++){
       if(mySession !== session) return;
@@ -712,15 +714,22 @@
     await sleep(dur(BASE.wavePause));
 
     if(mySession !== session) return;
-    log('============================');
-    log('Novo cliente chegando');
-    log('============================');
+    log('=======================================================');
+    log('Segunda leva: novo cliente após o pico inicial');
+    log('=======================================================');
     arrival(nextCustomerId++);
 
     await sleep(dur(BASE.finalPause));
     if(mySession !== session) return;
 
     closeShop();
+    
+    // Aguarda o fechamento para mostrar a mensagem final
+    await sleep(dur(500)); 
+    if(mySession === session && finished) {
+       log('🏁 Demonstração concluída. Soneca Barber fechada!');
+    }
+    
     autoRunning = false;
     setControlsState();
   }
@@ -739,6 +748,8 @@
     renderWaiting();
     setBarberSleeping();
     setControlsState();
+    log('🚀 Iniciando Soneca Barber...', undefined);
+    log('📡 Servidor de mensagens ativo em 127.0.0.1:50000', 'wake');
     barberLoop(session);
   }
 
@@ -751,6 +762,8 @@
   renderWaiting();
   setBarberSleeping();
   setControlsState();
+  log('🚀 Iniciando Soneca Barber...', undefined);
+  log('📡 Servidor de mensagens ativo em 127.0.0.1:50000', 'wake');
   barberLoop(session);
 })();
 </script>
